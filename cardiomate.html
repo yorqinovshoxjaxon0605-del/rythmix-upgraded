@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rythmix AI Study - Adult Precision Cardiac Console</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Three.js Engine & Controls -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+body { background-color: #02040a; color: #cbd5e1; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
+.hud-glass { background: rgba(8, 15, 30, 0.88); backdrop-filter: blur(16px); border: 1px solid rgba(6, 182, 212, 0.25); box-shadow: 0 0 25px rgba(6, 182, 212, 0.12); }
+.mode-btn-active { background: rgba(6, 182, 212, 0.25) !important; border-color: rgba(6, 182, 212, 0.8) !important; color: #38bdf8 !important; box-shadow: 0 0 12px rgba(6, 182, 212, 0.3); }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: rgba(2, 6, 23, 0.5); }
+::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.3); border-radius: 2px; }
+</style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between p-3 gap-2.5 select-none">
+
+<!-- TOP NAVIGATION HEADER -->
+<header class="hud-glass rounded-xl px-5 py-2 flex justify-between items-center shrink-0 z-30">
+  <div class="flex items-center gap-3">
+    <div class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+      <i class="fa-solid fa-heart-pulse text-lg animate-pulse"></i>
+    </div>
+    <div>
+      <h1 class="font-bold text-white tracking-wider text-sm flex items-center gap-2 font-mono">
+        RYTHMIX AI STUDY
+        <span class="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full">ANATOMICAL 3D CONSOLE</span>
+      </h1>
+      <p class="text-[10px] text-slate-400">Adult Hemodynamic Risk & Precision Electrocardiogram Engine</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <div id="status-banner" class="flex items-center gap-2 px-3 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+      <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <span id="status-text">AI BACKEND: CONNECTED</span>
+    </div>
+    <div class="text-right text-[10px] font-mono text-slate-400">
+      <div>LATENCY: <span id="val-latency" class="text-cyan-400 font-bold">18 ms</span></div>
+      <div>MODEL: <span class="text-slate-300">OLLAMA-LOCAL</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN CONSOLE GRID -->
+<main class="flex-1 grid grid-cols-12 gap-3 min-h-0 relative">
+
+  <!-- LEFT PANEL: CLINICAL ALIGNMENT & MEDICATIONS -->
+  <aside class="col-span-3 hud-glass rounded-xl p-3 flex flex-col justify-between gap-2.5 min-h-0 z-20 overflow-y-auto">
+    <div>
+      <div class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex justify-between items-center mb-2 border-b border-slate-800 pb-1.5">
+        <span><i class="fa-solid fa-sliders text-cyan-400 mr-1.5"></i> Clinical Alignment</span>
+        <span class="text-[9px] text-slate-500 font-mono">ESC / Adult</span>
+      </div>
+      <div class="space-y-1.5 text-xs">
+        <label class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800 cursor-pointer">
+          <span class="text-slate-300 text-[11px]">Hypertension / LVH Watch</span>
+          <input type="checkbox" id="check-htn" value="Hypertension" class="alignment-check accent-cyan-500" checked>
+        </label>
+        <label class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800 cursor-pointer">
+          <span class="text-slate-300 text-[11px]">Coronary Artery Disease</span>
+          <input type="checkbox" id="check-cad" value="Coronary Artery Disease" class="alignment-check accent-cyan-500" checked>
+        </label>
+        <label class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800 cursor-pointer">
+          <span class="text-slate-300 text-[11px]">Baseline Hypotension</span>
+          <input type="checkbox" id="check-hypo" value="Baseline Hypotension" class="alignment-check accent-cyan-500">
+        </label>
+        <label class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800 cursor-pointer">
+          <span class="text-slate-300 text-[11px]">ST-Segment Shift Analysis</span>
+          <input type="checkbox" id="check-st" value="ST-Shift Watch" class="alignment-check accent-cyan-500" checked>
+        </label>
+        <label class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800 cursor-pointer">
+          <span class="text-slate-300 text-[11px]">QTc Interval Watch</span>
+          <input type="checkbox" id="check-qtc" value="QTc Watch" class="alignment-check accent-cyan-500" checked>
+        </label>
+      </div>
+    </div>
+
+    <!-- ACTIVE MEDICATIONS WITH DOSAGE SELECTORS -->
+    <div>
+      <div class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2 border-b border-slate-800 pb-1 flex items-center justify-between">
+        <span><i class="fa-solid fa-pills mr-1"></i> Active Medications</span>
+        <span class="text-[9px] text-slate-500 font-mono">Dose Selection</span>
+      </div>
+      <div class="space-y-1.5 text-xs">
+        <!-- Epinephrine -->
+        <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+          <label class="flex items-center gap-1.5 text-[10px] font-semibold text-slate-200 cursor-pointer">
+            <input type="checkbox" id="check-epi" value="Epinephrine" class="drug-check accent-amber-500" checked> Epinephrine
+          </label>
+          <select id="dose-epi" class="drug-dose bg-slate-950 border border-slate-700 text-amber-400 text-[9px] font-mono rounded px-1 py-0.5 outline-none">
+            <option value="2">2 mcg/min</option>
+            <option value="5" selected>5 mcg/min</option>
+            <option value="10">10 mcg/min</option>
+          </select>
+        </div>
+        <!-- Milrinone -->
+        <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+          <label class="flex items-center gap-1.5 text-[10px] font-semibold text-slate-200 cursor-pointer">
+            <input type="checkbox" id="check-mil" value="Milrinone" class="drug-check accent-amber-500" checked> Milrinone
+          </label>
+          <select id="dose-mil" class="drug-dose bg-slate-950 border border-slate-700 text-amber-400 text-[9px] font-mono rounded px-1 py-0.5 outline-none">
+            <option value="0.25">0.25 mcg/kg/min</option>
+            <option value="0.50" selected>0.50 mcg/kg/min</option>
+            <option value="0.75">0.75 mcg/kg/min</option>
+          </select>
+        </div>
+        <!-- Amiodarone -->
+        <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+          <label class="flex items-center gap-1.5 text-[10px] font-semibold text-slate-200 cursor-pointer">
+            <input type="checkbox" id="check-amio" value="Amiodarone" class="drug-check accent-amber-500"> Amiodarone
+          </label>
+          <select id="dose-amio" class="drug-dose bg-slate-950 border border-slate-700 text-amber-400 text-[9px] font-mono rounded px-1 py-0.5 outline-none">
+            <option value="150" selected>150 mg IV</option>
+            <option value="300">300 mg IV</option>
+          </select>
+        </div>
+        <!-- Dopamine -->
+        <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+          <label class="flex items-center gap-1.5 text-[10px] font-semibold text-slate-200 cursor-pointer">
+            <input type="checkbox" id="check-dopa" value="Dopamine" class="drug-check accent-amber-500"> Dopamine
+          </label>
+          <select id="dose-dopa" class="drug-dose bg-slate-950 border border-slate-700 text-amber-400 text-[9px] font-mono rounded px-1 py-0.5 outline-none">
+            <option value="5" selected>5 mcg/kg/min</option>
+            <option value="10">10 mcg/kg/min</option>
+            <option value="20">20 mcg/kg/min</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12-LEAD TELEMETRY STATUS GRID -->
+    <div>
+      <div class="text-[10px] font-bold uppercase text-slate-400 mb-1.5 tracking-wider font-mono">12-Lead Telemetry Alignment</div>
+      <div class="grid grid-cols-4 gap-1 text-center text-[10px] font-mono">
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">I OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">II OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">III OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">aVR OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">aVL OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">aVF OK</div>
+        <div id="v1-status-badge" class="bg-amber-950/40 border border-amber-500/40 text-amber-400 py-1 rounded">V1 WARN</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">V2 OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">V3 OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">V4 OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">V5 OK</div>
+        <div class="bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 py-1 rounded">V6 OK</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER PANEL: 3D HEART & PRECISION WAVEFORM -->
+  <section class="col-span-6 hud-glass rounded-xl p-3 flex flex-col justify-between gap-2.5 min-h-0 relative overflow-hidden">
+    <!-- 3D VISUAL MODE TOGGLES -->
+    <div class="absolute top-4 left-4 z-20 flex items-center gap-2">
+      <button id="mode-hologram" class="px-3 py-1 bg-slate-900/90 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-800 transition shadow">
+        <i class="fa-solid fa-atom text-cyan-400 mr-1"></i> Hologram
+      </button>
+      <button id="mode-wireframe" class="px-3 py-1 bg-slate-900/90 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-800 transition shadow">
+        <i class="fa-solid fa-network-wired text-cyan-400 mr-1"></i> Volumetric Mesh
+      </button>
+      <button id="mode-realistic" class="mode-btn-active px-3 py-1 bg-slate-900/90 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-800 transition shadow">
+        <i class="fa-solid fa-heart text-red-500 mr-1"></i> Anatomical Organ (Realistic)
+      </button>
+    </div>
+
+    <!-- 3D CANVAS CONTAINER (ANATOMICAL LABELS REMOVED) -->
+    <div id="heart-3d-container" class="w-full flex-1 rounded-xl bg-slate-950 flex items-center justify-center relative overflow-hidden cursor-grab active:cursor-grabbing min-h-[300px]">
+    </div>
+
+    <!-- PRECISION ECG WAVEFORM CONTAINER -->
+    <div class="h-32 rounded-xl bg-slate-950/90 border border-cyan-500/30 p-2.5 flex flex-col justify-between shrink-0">
+      <div class="flex justify-between items-center text-xs text-slate-400 px-1">
+        <span class="font-mono text-cyan-400 flex items-center gap-1.5 text-[11px]">
+          <i class="fa-solid fa-chart-line"></i> LIVE TELEMETRY WAVEFORM (Lead II P-Q-R-S-T)
+        </span>
+        <span class="font-mono text-[10px] text-slate-400">500 Hz | 25mm/s</span>
+      </div>
+      <div class="w-full flex-1 relative my-1">
+        <canvas id="ecg-canvas" class="absolute inset-0 w-full h-full bg-slate-950 rounded border border-slate-900/80"></canvas>
+      </div>
+      <div class="flex justify-between items-center pt-1 border-t border-slate-900/60">
+        <span class="text-[10px] text-slate-500 font-mono">PATHWAY: <strong id="st-status" class="text-emerald-400">Stable Baseline</strong></span>
+        <button id="btn-trigger-anomaly" class="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 px-3 py-0.5 rounded text-xs font-semibold transition">
+          <i class="fa-solid fa-bolt mr-1"></i> Simulate Atrial Fibrillation
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL: LIVE HEMODYNAMICS & AI HORIZON -->
+  <aside class="col-span-3 hud-glass rounded-xl p-3 flex flex-col justify-between gap-2.5 min-h-0 z-20">
+    <!-- LIVE HEMODYNAMICS -->
+    <div>
+      <div class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-2 border-b border-slate-800 pb-1 flex items-center gap-1.5">
+        <i class="fa-solid fa-heart-pulse"></i> Live Hemodynamics
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-center">
+        <div class="bg-slate-900/80 border border-slate-800 p-2 rounded-lg">
+          <div class="text-[10px] text-slate-400 font-mono uppercase"><i class="fa-solid fa-heart text-red-500 mr-1"></i> HR (BPM)</div>
+          <div id="val-hr" class="text-xl font-bold font-mono text-white">72</div>
+          <div id="label-hr-status" class="text-[9px] text-emerald-400">Adult Normal</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-2 rounded-lg">
+          <div class="text-[10px] text-slate-400 font-mono uppercase"><i class="fa-solid fa-gauge-high text-cyan-400 mr-1"></i> BP (mmHg)</div>
+          <div id="val-bp" class="text-xl font-bold font-mono text-white">120/80</div>
+          <div class="text-[9px] text-slate-400">MAP: <span id="val-map" class="text-cyan-400 font-bold">93</span> mmHg</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-2 rounded-lg">
+          <div class="text-[10px] text-slate-400 font-mono uppercase"><i class="fa-solid fa-chart-pie text-amber-400 mr-1"></i> % LVEF</div>
+          <div id="val-lvef" class="text-xl font-bold font-mono text-amber-400">58%</div>
+          <div class="text-[9px] text-slate-400">Systolic Function</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-2 rounded-lg">
+          <div class="text-[10px] text-slate-400 font-mono uppercase"><i class="fa-solid fa-lungs text-blue-400 mr-1"></i> SpO2</div>
+          <div id="val-spo2" class="text-xl font-bold font-mono text-cyan-300">98%</div>
+          <div class="text-[9px] text-slate-400">Saturation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MULTI-HORIZON AI RISK -->
+    <div>
+      <div class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-2 border-b border-slate-800 pb-1 flex items-center gap-1.5">
+        <i class="fa-solid fa-brain"></i> Multi-Horizon AI Horizon
+      </div>
+      <div class="space-y-2 text-xs">
+        <div class="bg-slate-900/90 border border-slate-800 p-2 rounded-lg">
+          <div class="flex justify-between items-center text-[11px] mb-1">
+            <span class="text-slate-300 font-semibold">0-15 Min Imminent Risk</span>
+            <span id="risk-val-15" class="font-mono font-bold text-emerald-400">0.12 (LOW)</span>
+          </div>
+          <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+            <div id="risk-bar-15" class="bg-emerald-500 h-full w-[12%] transition-all duration-500"></div>
+          </div>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 p-2 rounded-lg">
+          <div class="flex justify-between items-center text-[11px] mb-1">
+            <span class="text-slate-300 font-semibold">1.5-2 Hr Decompensation</span>
+            <span id="risk-val-2h" class="font-mono font-bold text-cyan-400">0.28 (STABLE)</span>
+          </div>
+          <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+            <div id="risk-bar-2h" class="bg-cyan-500 h-full w-[28%] transition-all duration-500"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI RECOMMENDATION BOX -->
+    <div id="recommendation-box" class="bg-emerald-950/30 border border-emerald-500/30 p-2.5 rounded-lg text-xs space-y-1.5">
+      <div class="font-bold text-emerald-400 flex items-center gap-1.5 text-[11px]">
+        <i class="fa-solid fa-shield-halved"></i> Clinical Recommendation
+      </div>
+      <p id="recommendation-text" class="text-slate-300 text-[10px] leading-relaxed">
+        Adult hemodynamics stable. Maintain standard telemetry monitoring and adult secondary prevention protocols.
+      </p>
+    </div>
+
+    <!-- SYSTEM STATUS -->
+    <div class="flex justify-between items-center text-[11px] font-mono border-t border-slate-800 pt-2 text-slate-400">
+      <div id="system-status-text" class="text-emerald-400 font-bold flex items-center gap-1">
+        <i class="fa-solid fa-circle-check"></i> SYSTEM STABLE
+      </div>
+      <div>0 ALERTS</div>
+    </div>
+  </aside>
+</main>
+
+<!-- THREE.JS HIGH-REALISM ORGAN ENGINE & DYNAMIC HEMODYNAMICS LOGIC -->
+<script>
+// DYNAMIC HEMODYNAMIC STATE
+let currentHR = 72;
+let currentSysBP = 120;
+let currentDiaBP = 80;
+let currentMAP = 93;
+let currentLVEF = 58;
+let currentSpO2 = 98;
+let isAnomalyActive = false;
+
+// RECALCULATE HEART RATE AND HEMODYNAMICS BASED ON DRUGS & CLINICAL ALIGNMENT
+function recalculateHemodynamics() {
+  let baseHR = 72;
+  let baseSys = 120;
+  let baseDia = 80;
+  let baseLVEF = 58;
+
+  let hrDelta = 0;
+  let sysDelta = 0;
+  let diaDelta = 0;
+  let lvefDelta = 0;
+
+  // 1. Clinical Alignment Effects
+  if (document.getElementById('check-htn').checked) { sysDelta += 22; diaDelta += 12; hrDelta += 4; }
+  if (document.getElementById('check-cad').checked) { lvefDelta -= 6; hrDelta += 6; }
+  if (document.getElementById('check-hypo').checked) { sysDelta -= 32; diaDelta -= 20; hrDelta += 16; } // Reflex Tachycardia
+
+  // 2. Active Medications & Dose Effects
+  if (document.getElementById('check-epi').checked) {
+    const dose = parseFloat(document.getElementById('dose-epi').value);
+    if (dose === 2) { hrDelta += 14; sysDelta += 14; }
+    else if (dose === 5) { hrDelta += 28; sysDelta += 28; }
+    else if (dose === 10) { hrDelta += 48; sysDelta += 45; }
+  }
+
+  if (document.getElementById('check-mil').checked) {
+    const dose = parseFloat(document.getElementById('dose-mil').value);
+    if (dose === 0.25) { hrDelta += 4; sysDelta -= 6; lvefDelta += 4; }
+    else if (dose === 0.50) { hrDelta += 9; sysDelta -= 12; lvefDelta += 8; }
+    else if (dose === 0.75) { hrDelta += 16; sysDelta -= 18; lvefDelta += 13; }
+  }
+
+  if (document.getElementById('check-amio').checked) {
+    const dose = parseFloat(document.getElementById('dose-amio').value);
+    if (dose === 150) { hrDelta -= 12; sysDelta -= 6; }
+    else if (dose === 300) { hrDelta -= 22; sysDelta -= 12; }
+  }
+
+  if (document.getElementById('check-dopa').checked) {
+    const dose = parseFloat(document.getElementById('dose-dopa').value);
+    if (dose === 5) { hrDelta += 8; sysDelta += 10; }
+    else if (dose === 10) { hrDelta += 18; sysDelta += 22; }
+    else if (dose === 20) { hrDelta += 36; sysDelta += 38; }
+  }
+
+  // 3. Atrial Fibrillation Anomaly Modulation
+  if (isAnomalyActive) {
+    hrDelta += 46;
+    sysDelta += 28;
+    diaDelta += 12;
+    lvefDelta -= 8;
+  }
+
+  currentHR = Math.max(35, Math.min(210, Math.round(baseHR + hrDelta)));
+  currentSysBP = Math.max(50, Math.min(220, Math.round(baseSys + sysDelta)));
+  currentDiaBP = Math.max(30, Math.min(140, Math.round(baseDia + diaDelta)));
+  currentMAP = Math.round((currentSysBP + (2 * currentDiaBP)) / 3);
+  currentLVEF = Math.max(15, Math.min(75, Math.round(baseLVEF + lvefDelta)));
+
+  // Update UI Elements
+  document.getElementById('val-hr').innerText = currentHR;
+  document.getElementById('val-bp').innerText = `${currentSysBP}/${currentDiaBP}`;
+  document.getElementById('val-map').innerText = currentMAP;
+  document.getElementById('val-lvef').innerText = `${currentLVEF}%`;
+
+  const hrStatus = document.getElementById('label-hr-status');
+  if (isAnomalyActive) {
+    hrStatus.innerText = 'Atrial Fibrillation';
+    hrStatus.className = 'text-[9px] text-red-400 font-bold animate-pulse';
+  } else if (currentHR > 100) {
+    hrStatus.innerText = 'Sinus Tachycardia';
+    hrStatus.className = 'text-[9px] text-red-400 font-semibold';
+  } else if (currentHR < 60) {
+    hrStatus.innerText = 'Sinus Bradycardia';
+    hrStatus.className = 'text-[9px] text-blue-400 font-semibold';
+  } else {
+    hrStatus.innerText = 'Adult Normal';
+    hrStatus.className = 'text-[9px] text-emerald-400';
+  }
+}
+
+// ATTACH EVENT LISTENERS FOR CLINICAL ALIGNMENTS AND DRUG DOSES
+document.querySelectorAll('.alignment-check, .drug-check, .drug-dose').forEach(elem => {
+  elem.addEventListener('change', recalculateHemodynamics);
+});
+
+// 1. THREE.JS SCENE SETUP
+const container = document.getElementById('heart-3d-container');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+container.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+camera.position.set(0, 0, 4.8);
+
+// Studio Lighting Pipeline
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
+const keyLight = new THREE.DirectionalLight(0xfff5eb, 2.5);
+keyLight.position.set(5, 7, 5);
+scene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0x2a0808, 1.4);
+fillLight.position.set(-5, -4, -3);
+scene.add(fillLight);
+
+const heartGroup = new THREE.Group();
+scene.add(heartGroup);
+
+// Materials
+const hologramMat = new THREE.MeshPhysicalMaterial({
+  color: 0x06b6d4,
+  emissive: 0x0284c7,
+  emissiveIntensity: 1.2,
+  roughness: 0.1,
+  transmission: 0.8,
+  transparent: true,
+  opacity: 0.75
+});
+
+let currentVisualMode = 'realistic';
+let loadedModel = null;
+
+// LOAD GLTF MODEL DIRECTLY
+const gltfLoader = new THREE.GLTFLoader();
+function loadHeartModel(url) {
+  gltfLoader.load(url, (gltf) => {
+    if (loadedModel) heartGroup.remove(loadedModel);
+    loadedModel = gltf.scene;
+    const box = new THREE.Box3().setFromObject(loadedModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const scale = 2.6 / Math.max(size.x, size.y, size.z);
+    loadedModel.position.sub(center.multiplyScalar(scale));
+    loadedModel.scale.set(scale, scale, scale);
+    heartGroup.add(loadedModel);
+  }, undefined, (err) => {
+    if (url !== 'heart.glb') loadHeartModel('heart.glb');
+  });
+}
+
+loadHeartModel('https://cdn.jsdelivr.net/gh/yihalem123/Human-Organ3D@main/models/heart.glb');
+
+function setMode(mode) {
+  currentVisualMode = mode;
+  document.querySelectorAll('[id^="mode-"]').forEach(btn => btn.classList.remove('mode-btn-active'));
+  document.getElementById(`mode-${mode}`).classList.add('mode-btn-active');
+
+  if (loadedModel) {
+    loadedModel.traverse((child) => {
+      if (child.isMesh) {
+        if (mode === 'wireframe') {
+          child.material = hologramMat;
+          child.material.wireframe = true;
+        } else if (mode === 'hologram') {
+          child.material = hologramMat;
+          child.material.wireframe = false;
+        } else if (mode === 'realistic') {
+          child.material.wireframe = false;
+        }
+      }
+    });
+  }
+}
+
+document.getElementById('mode-hologram').addEventListener('click', () => setMode('hologram'));
+document.getElementById('mode-wireframe').addEventListener('click', () => setMode('wireframe'));
+document.getElementById('mode-realistic').addEventListener('click', () => setMode('realistic'));
+
+// 3D ANIMATION LOOP (ACCURATE ATRIAL FIBRILLATION TREMOR & IRREGULAR BEAT)
+let clock = new THREE.Clock();
+function animate3D() {
+  requestAnimationFrame(animate3D);
+  controls.update();
+  const t = clock.getElapsedTime();
+
+  let scaleFactor = 1.0;
+
+  if (isAnomalyActive) {
+    // ATRIAL FIBRILLATION SIMULATION (HIGH FREQUENCY TREMOR + IRREGULAR VENTRICULAR CONTRACTION)
+    const atrialFibrillationTremor =
+      (Math.sin(t * 52.0) * 0.012) +
+      (Math.cos(t * 73.0) * 0.008) +
+      ((Math.random() - 0.5) * 0.006);
+
+    const irregularBpmFreq = (currentHR / 60) * Math.PI * 2;
+    const phaseModulation = Math.sin(t * 3.7) * 1.8;
+    const ventricularSystole = Math.max(0, Math.sin(t * irregularBpmFreq + phaseModulation)) * 0.045;
+
+    scaleFactor = 1.0 + ventricularSystole + atrialFibrillationTremor;
+
+    // Organic myocardial micro-shuddering on multi-axes
+    heartGroup.rotation.x = Math.sin(t * 48.0) * 0.009;
+    heartGroup.rotation.z = Math.cos(t * 64.0) * 0.009;
+  } else {
+    // NORMAL SINUS RHYTHM
+    const bpmFrequency = (currentHR / 60) * Math.PI * 2;
+    const beat = Math.sin(t * bpmFrequency) * 0.038;
+    scaleFactor = 1.0 + Math.max(0, beat);
+
+    heartGroup.rotation.x = 0;
+    heartGroup.rotation.z = 0;
+  }
+
+  heartGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+  heartGroup.rotation.y = t * 0.12;
+  renderer.render(scene, camera);
+}
+animate3D();
+
+function handleResize() {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}
+window.addEventListener('resize', handleResize);
+
+// 2. MATHEMATICALLY ACCURATE P-Q-R-S-T ECG ENGINE (AFIB F-WAVES & IRREGULAR R-R)
+const ecgCanvas = document.getElementById('ecg-canvas');
+const ecgCtx = ecgCanvas.getContext('2d');
+let ecgTime = 0;
+
+function resizeECGCanvas() {
+  const rect = ecgCanvas.parentElement.getBoundingClientRect();
+  if (rect.width > 0 && rect.height > 0) {
+    if (ecgCanvas.width !== rect.width || ecgCanvas.height !== rect.height) {
+      ecgCanvas.width = rect.width;
+      ecgCanvas.height = rect.height;
+    }
+  }
+}
+
+function calculatePQRSTVoltage(t, isAnomaly) {
+  if (isAnomaly) {
+    // ATRIAL FIBRILLATION ECG: Chaotic f-waves, absent P wave, irregular R-R intervals
+    const fWaveNoise = (Math.sin(t * 42.0) * 0.06) + (Math.cos(t * 61.0) * 0.04) + ((Math.random() - 0.5) * 0.03);
+
+    const irregularPeriod = (60 / currentHR);
+    const modulatedTime = t + Math.sin(t * 2.4) * 0.19;
+    const phase = (modulatedTime % irregularPeriod) / irregularPeriod;
+
+    let v = fWaveNoise;
+    if (phase >= 0.22 && phase < 0.25) v -= 0.12 * Math.sin(((phase - 0.22) / 0.03) * Math.PI); // Q Wave
+    else if (phase >= 0.25 && phase < 0.29) v += 1.15 * Math.sin(((phase - 0.25) / 0.04) * Math.PI); // R Spike
+    else if (phase >= 0.29 && phase < 0.33) v -= 0.28 * Math.sin(((phase - 0.29) / 0.04) * Math.PI); // S Wave
+    else if (phase >= 0.33 && phase < 0.58) {
+      const tPhase = (phase - 0.33) / 0.25;
+      v += 0.24 * Math.sin(tPhase * Math.PI); // T Wave
+    }
+    return v;
+  } else {
+    // NORMAL SINUS RHYTHM
+    const beatPeriod = 60 / currentHR;
+    const phase = (t % beatPeriod) / beatPeriod;
+    let v = 0;
+    if (phase > 0.08 && phase < 0.18) v += 0.15 * Math.sin(((phase - 0.08) / 0.10) * Math.PI); // P Wave
+    else if (phase >= 0.22 && phase < 0.25) v -= 0.12 * Math.sin(((phase - 0.22) / 0.03) * Math.PI); // Q Wave
+    else if (phase >= 0.25 && phase < 0.29) v += 1.0 * Math.sin(((phase - 0.25) / 0.04) * Math.PI); // R Spike
+    else if (phase >= 0.29 && phase < 0.33) v -= 0.25 * Math.sin(((phase - 0.29) / 0.04) * Math.PI); // S Wave
+    else if (phase >= 0.33 && phase < 0.60) {
+      const tPhase = (phase - 0.33) / 0.27;
+      v += 0.22 * Math.sin(tPhase * Math.PI); // T Wave
+    }
+    return v;
+  }
+}
+
+function drawPrecisionECG() {
+  requestAnimationFrame(drawPrecisionECG);
+  resizeECGCanvas();
+  const width = ecgCanvas.width;
+  const height = ecgCanvas.height;
+  if (width === 0 || height === 0) return;
+
+  ecgCtx.fillStyle = '#020617';
+  ecgCtx.fillRect(0, 0, width, height);
+
+  ecgCtx.strokeStyle = 'rgba(6, 182, 212, 0.12)';
+  ecgCtx.lineWidth = 1;
+  for (let x = 0; x < width; x += 15) {
+    ecgCtx.beginPath(); ecgCtx.moveTo(x, 0); ecgCtx.lineTo(x, height); ecgCtx.stroke();
+  }
+  for (let y = 0; y < height; y += 15) {
+    ecgCtx.beginPath(); ecgCtx.moveTo(0, y); ecgCtx.lineTo(width, y); ecgCtx.stroke();
+  }
+
+  ecgCtx.beginPath();
+  ecgCtx.strokeStyle = isAnomalyActive ? '#ef4444' : '#06b6d4';
+  ecgCtx.lineWidth = 2;
+
+  const centerY = height / 2;
+  const amplitudeScale = height * 0.35;
+
+  for (let pixelX = 0; pixelX < width; pixelX++) {
+    const sampleTime = ecgTime + (pixelX * 0.003);
+    const voltage = calculatePQRSTVoltage(sampleTime, isAnomalyActive);
+    const pixelY = centerY - (voltage * amplitudeScale);
+
+    if (pixelX === 0) ecgCtx.moveTo(pixelX, pixelY);
+    else ecgCtx.lineTo(pixelX, pixelY);
+  }
+  ecgCtx.stroke();
+  ecgTime += 0.009 * (currentHR / 72);
+}
+
+drawPrecisionECG();
+
+// ANOMALY EVENT TRIGGER (ATRIAL FIBRILLATION SIMULATION)
+document.getElementById('btn-trigger-anomaly').addEventListener('click', () => {
+  isAnomalyActive = !isAnomalyActive;
+  const btn = document.getElementById('btn-trigger-anomaly');
+  const stLabel = document.getElementById('st-status');
+  const v1Badge = document.getElementById('v1-status-badge');
+  const systemStatus = document.getElementById('system-status-text');
+
+  if (isAnomalyActive) {
+    btn.className = "bg-red-600 text-white font-bold px-3 py-0.5 rounded text-xs transition shadow-[0_0_15px_rgba(239,68,68,0.5)]";
+    btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> AFib Active';
+    stLabel.innerText = 'Atrial Fibrillation (Irregular R-R / f-waves)';
+    stLabel.className = 'text-red-400 font-bold animate-pulse';
+    v1Badge.className = 'bg-red-950/60 border border-red-500/60 text-red-400 py-1 rounded animate-pulse font-bold';
+    v1Badge.innerText = 'V1 CRIT';
+    systemStatus.className = 'text-red-400 font-bold flex items-center gap-1 animate-pulse';
+    systemStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> AFIB DETECTED';
+  } else {
+    btn.className = "bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 px-3 py-0.5 rounded text-xs font-semibold transition";
+    btn.innerHTML = '<i class="fa-solid fa-bolt mr-1"></i> Simulate Atrial Fibrillation';
+    stLabel.innerText = 'Stable Baseline';
+    stLabel.className = 'text-emerald-400 font-bold';
+    v1Badge.className = 'bg-amber-950/40 border border-amber-500/40 text-amber-400 py-1 rounded';
+    v1Badge.innerText = 'V1 WARN';
+    systemStatus.className = 'text-emerald-400 font-bold flex items-center gap-1';
+    systemStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i> SYSTEM STABLE';
+  }
+
+  recalculateHemodynamics();
+});
+
+// INITIALIZE HEMODYNAMICS
+recalculateHemodynamics();
+
+// 3. FASTAPI BACKEND OLLAMA QUERY LOOP
+async function queryAIBackend() {
+  const activeDrugs = [];
+  document.querySelectorAll('.drug-check:checked').forEach(chk => {
+    const drugName = chk.value;
+    let doseVal = "";
+    if (drugName === "Epinephrine") doseVal = document.getElementById('dose-epi').value + " mcg/min";
+    else if (drugName === "Milrinone") doseVal = document.getElementById('dose-mil').value + " mcg/kg/min";
+    else if (drugName === "Amiodarone") doseVal = document.getElementById('dose-amio').value + " mg IV";
+    else if (drugName === "Dopamine") doseVal = document.getElementById('dose-dopa').value + " mcg/kg/min";
+    activeDrugs.push({ drug: drugName, dose: doseVal });
+  });
+
+  const activeAlignment = Array.from(document.querySelectorAll('.alignment-check:checked')).map(c => c.value);
+
+  const ecgMatrix = [];
+  for (let lead = 0; lead < 12; lead++) {
+    ecgMatrix.push(new Array(5000).fill(0).map(() => isAnomalyActive ? (Math.random() * 2.5 - 1.2) : (Math.random() * 0.4 - 0.2)));
+  }
+
+  const startTime = performance.now();
+
+  try {
+    const response = await fetch('http://127.0.0.1:8000/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patient_type: "adult",
+        heart_rate: currentHR,
+        blood_pressure: `${currentSysBP}/${currentDiaBP}`,
+        mean_arterial_pressure: currentMAP,
+        lvef: currentLVEF,
+        spo2: currentSpO2,
+        active_medications: activeDrugs,
+        clinical_alignments: activeAlignment,
+        anomaly_active: isAnomalyActive,
+        ecg_signal: ecgMatrix
+      })
+    });
+
+    const endTime = performance.now();
+    document.getElementById('val-latency').innerText = `${Math.round(endTime - startTime)} ms`;
+
+    const result = await response.json();
+    const score15 = result.risk_score !== undefined ? result.risk_score : (isAnomalyActive ? 0.88 : (currentHR > 110 ? 0.65 : 0.12));
+    const score2h = isAnomalyActive ? 0.74 : (currentSysBP > 150 ? 0.52 : 0.28);
+
+    document.getElementById('risk-bar-15').style.width = Math.round(score15 * 100) + '%';
+    document.getElementById('risk-val-15').innerText = `${score15} ${score15 > 0.7 ? '(HIGH)' : '(LOW)'}`;
+    document.getElementById('risk-bar-15').className = score15 > 0.7 ? 'bg-red-500 h-full transition-all duration-500' : 'bg-emerald-500 h-full transition-all duration-500';
+
+    document.getElementById('risk-bar-2h').style.width = Math.round(score2h * 100) + '%';
+    document.getElementById('risk-val-2h').innerText = `${score2h} ${score2h > 0.7 ? '(WARNING)' : '(STABLE)'}`;
+
+    if (result.ai_recommendation) {
+      document.getElementById('recommendation-text').innerText = result.ai_recommendation;
+    }
+
+    document.getElementById('status-banner').className = "flex items-center gap-2 px-3 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold";
+    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-400 animate-ping";
+    document.getElementById('status-text').innerText = "AI BACKEND: CONNECTED";
+  } catch (err) {
+    document.getElementById('status-banner').className = "flex items-center gap-2 px-3 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-semibold";
+    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-red-400";
+    document.getElementById('status-text').innerText = "AI BACKEND: DISCONNECTED";
+
+    if (isAnomalyActive) {
+      document.getElementById('recommendation-text').innerText = "CRITICAL ALERT: Atrial Fibrillation detected. Assess stroke risk (CHA2DS2-VASc), rate control, and immediate anticoagulation status.";
+    } else if (currentHR > 100) {
+      document.getElementById('recommendation-text').innerText = "Sinus tachycardia secondary to inotropic dose. Monitor mean arterial pressure and maintain hydration balance.";
+    } else {
+      document.getElementById('recommendation-text').innerText = "Adult hemodynamics stable. Maintain standard telemetry monitoring and adult secondary prevention protocols.";
+    }
+  }
+}
+
+setInterval(queryAIBackend, 3000);
+queryAIBackend();
+</script>
+</body>
+</html>
