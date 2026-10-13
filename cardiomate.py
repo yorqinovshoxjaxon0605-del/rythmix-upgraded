@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 app = FastAPI(title="CardioMate Cardiac AI Predictor")
 
-# CORS sozlamasi (Frontend uchun)
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,13 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Konfiguratsiya
-OLLAMA_BASE_URL = "http://127.0.0.1:11434"
-OLLAMA_MODEL_NAME = "llama3"  # Akangiz OLLAMA modelining nomi
 DB_FILE = "cardiomate_history.db"
+OLLAMA_BASE_URL = "http://127.0.0.1:11434"
+OLLAMA_MODEL_NAME = "llama3"
 
 
-# --- 1. SQL BAZANI BO'SHATISH VA YANGI STRUKTURA YARATISH ---
 def init_db() -> None:
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
@@ -39,6 +37,7 @@ def init_db() -> None:
             signal_variance REAL NOT NULL,
             active_drugs TEXT NOT NULL,
             comorbidities TEXT NOT NULL,
+            selected_lead TEXT NOT NULL,
             ai_recommendation TEXT NOT NULL,
             ai_source TEXT NOT NULL
         )
@@ -56,6 +55,7 @@ def log_to_sql(
     variance: float,
     drugs: List[str],
     comorbidities: List[str],
+    selected_lead: str,
     recommendation: str,
     source: str,
 ) -> None:
@@ -66,8 +66,8 @@ def log_to_sql(
         cursor.execute(
             """
             INSERT INTO cardiac_analysis_logs 
-            (timestamp, risk_score, status, signal_variance, active_drugs, comorbidities, ai_recommendation, ai_source)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (timestamp, risk_score, status, signal_variance, active_drugs, comorbidities, selected_lead, ai_recommendation, ai_source)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 timestamp,
@@ -76,6 +76,7 @@ def log_to_sql(
                 variance,
                 json.dumps(drugs),
                 json.dumps(comorbidities),
+                selected_lead,
                 recommendation,
                 source,
             ),
@@ -86,66 +87,105 @@ def log_to_sql(
         print(f"SQL Log Error: {e}")
 
 
-# --- 2. MA'LUMOT MODELI ---
+# --- DATA MODEL ---
 class CardiacAnalysisRequest(BaseModel):
-    ecg_signal: List[List[float]]
+    ecg_signal: Optional[List[List[float]]] = None
     drugs: Optional[List[str]] = []
     comorbidities: Optional[List[str]] = []
+    selected_lead: Optional[str] = "II"
 
 
-# --- 3. API ENDPOINTLARI ---
+# --- ENDPOINTS ---
 @app.get("/")
 def root() -> Dict[str, str]:
     return {
         "status": "CardioMate AI Engine Active",
-        "mode": "ECG + Drugs + Comorbidities Analyzer",
+        "mode": "12-Lead Electrocardiogram Analyzer",
         "database": f"SQLite Connected ({DB_FILE})"
     }
 
 
 @app.post("/predict")
 async def predict_risk(payload: CardiacAnalysisRequest) -> Dict[str, Any]:
-    # ECG Signal Analizi
     signals = payload.ecg_signal
-    lead_ii = signals[1] if len(signals) > 1 else signals[0]
-    mean_ii = sum(lead_ii) / len(lead_ii) if lead_ii else 0.0
-    signal_variance = (
-        float(sum((x - mean_ii) ** 2 for x in lead_ii) / len(lead_ii))
-        if lead_ii
-        else 0.0
-    )
+    if signals and len(signals) > 0:
+        lead_ii = signals[1] if len(signals) > 1 else signals[0]
+        mean_ii = sum(lead_ii) / len(lead_ii) if lead_ii else 0.0
+        signal_variance = (
+            float(sum((x - mean_ii) ** 2 for x in lead_ii) / len(lead_ii))
+            if lead_ii
+            else 0.05
+        )
+    else:
+        signal_variance = 0.05
 
     drugs = payload.drugs or []
     comorbidities = payload.comorbidities or []
+    selected_lead = payload.selected_lead or "II"
 
-    # Anomaliya signali va risk xisobi
-    is_anomaly = signal_variance > 0.15 or len(comorbidities) >= 3
+    # Dynamic Pediatric Vitals Engine
+    base_hr = 138
+    base_sys, base_dia = 85, 52
+    base_lvef = 58
+    base_spo2 = 98
 
-    # Ollama AI ga so'rov yuborish
+    if "Epinephrine" in drugs:
+        base_hr += 18
+        base_sys += 12
+        base_dia += 6
+    if "Milrinone" in drugs:
+        base_lvef += 6
+        base_sys -= 4
+    if "Amiodarone" in drugs:
+        base_hr -= 15
+    if "Dopamine" in drugs:
+        base_hr += 10
+        base_sys += 8
+
+    if "Baseline Hypotension" in comorbidities:
+        base_sys -= 15
+        base_dia -= 10
+    if "Congenital Defect Watch" in comorbidities:
+        base_spo2 -= 4
+        base_lvef -= 5
+
+    map_val = int(base_dia + (base_sys - base_dia) / 3)
+
+    is_anomaly = (
+        signal_variance > 0.15 
+        or len(comorbidities) >= 3 
+        or "ST-Segment Shift Analysis" in comorbidities
+    )
+
+    if is_anomaly:
+        imminent_risk = round(random.uniform(0.65, 0.88), 2)
+        decomp_risk = round(random.uniform(0.50, 0.75), 2)
+        status = "CRITICAL_ALERT"
+    else:
+        imminent_risk = round(random.uniform(0.08, 0.22), 2)
+        decomp_risk = round(random.uniform(0.15, 0.35), 2)
+        status = "STABLE"
+
+    risk_score = imminent_risk
+
     ollama_analysis = await query_ollama_ai(
         variance=signal_variance,
         is_anomaly=is_anomaly,
         drugs=drugs,
-        comorbidities=comorbidities
+        comorbidities=comorbidities,
+        selected_lead=selected_lead
     )
-
-    if is_anomaly:
-        risk_score = round(random.uniform(0.78, 0.95), 2)
-        status = "CRITICAL_ALERT"
-    else:
-        risk_score = round(random.uniform(0.05, 0.25), 2)
-        status = "STABLE"
 
     recommendation = str(ollama_analysis.get("recommendation", ""))
     source = str(ollama_analysis.get("source", ""))
 
-    # Bazaga yozish
     log_to_sql(
         risk_score=risk_score,
         status=status,
         variance=signal_variance,
         drugs=drugs,
         comorbidities=comorbidities,
+        selected_lead=selected_lead,
         recommendation=recommendation,
         source=source
     )
@@ -153,11 +193,25 @@ async def predict_risk(payload: CardiacAnalysisRequest) -> Dict[str, Any]:
     return {
         "risk_score": risk_score,
         "status": status,
+        "selected_lead": selected_lead,
         "signal_variance": round(signal_variance, 4),
         "active_drugs": drugs,
         "comorbidities": comorbidities,
+        "vitals": {
+            "hr": base_hr,
+            "bp": f"{base_sys}/{base_dia}",
+            "bp_sys": base_sys,
+            "bp_dia": base_dia,
+            "map": map_val,
+            "spo2": base_spo2,
+            "lvef": base_lvef
+        },
+        "multi_horizon_risk": {
+            "imminent_risk": imminent_risk,
+            "decompensation_risk": decomp_risk
+        },
         "ai_recommendation": recommendation,
-        "ai_source": source,
+        "ai_source": source
     }
 
 
@@ -175,12 +229,12 @@ def get_history(limit: int = 20) -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-# --- 4. OLLAMA AI INTEGRATSIYASI ---
 async def query_ollama_ai(
-    variance: float, is_anomaly: bool, drugs: List[str], comorbidities: List[str]
+    variance: float, is_anomaly: bool, drugs: List[str], comorbidities: List[str], selected_lead: str
 ) -> Dict[str, str]:
     prompt = f"""You are CardioMate Pediatric Cardiac AI.
 Analyze patient status based on:
+- Selected ECG Lead: {selected_lead}
 - ECG Signal Variance: {variance:.4f}
 - Active Drugs: {', '.join(drugs) if drugs else 'None'}
 - Comorbidities: {', '.join(comorbidities) if comorbidities else 'None'}
@@ -213,9 +267,9 @@ Return ONLY JSON with key:
         pass
 
     if is_anomaly:
-        fallback_rec = "CRITICAL: High arrhythmia risk detected with active drug interaction & comorbidities. Adjust dosage immediately."
+        fallback_rec = f"CRITICAL: High hemodynamic risk observed on Lead {selected_lead}. Monitor for ischemia or dysrhythmia."
     else:
-        fallback_rec = "Normal ECG pattern with current therapeutic drugs and baseline condition. Continue monitoring."
+        fallback_rec = f"Lead {selected_lead} telemetry within normal baseline. Hemodynamics stable."
 
     return {
         "recommendation": fallback_rec,
