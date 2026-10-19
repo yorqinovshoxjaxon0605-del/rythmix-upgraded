@@ -1,0 +1,19 @@
+# This configuration uses a PAID service and persistent disk.
+# Review the cost shown by Render before creating it.
+services:
+  - type: web
+    name: cardiomate-study
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn cardiomate:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DB_FILE
+        value: /var/data/cardiomate_history.db
+      - key: COOKIE_SECURE
+        value: "true"
+    disk:
+      name: cardiomate-data
+      mountPath: /var/data
+      sizeGB: 1
